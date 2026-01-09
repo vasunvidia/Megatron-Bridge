@@ -19,7 +19,7 @@ from utils.helpers import (
     set_workload_base_configs,
 )
 
-from megatron.bridge.recipes.gpt_oss import gpt_oss_120b_pretrain_config
+from megatron.bridge.recipes.gpt_oss import gpt_oss_120b_pretrain_config, gpt_oss_20b_pretrain_config
 from megatron.bridge.training.config import ConfigContainer
 
 from . import workload_base_configs as base_cfgs
@@ -36,6 +36,25 @@ def set_gpt_oss_common_configs(cfg: ConfigContainer) -> None:
 
     cfg.model.moe_router_force_load_balancing = True
 
+
+def gpt_oss_20b_gb300_config(precision: str = "bf16") -> ConfigContainer:
+    """GB300, baseline config."""
+    print (f'!!! gpt_oss_20b_gb300_config')
+    if precision == "bf16":
+        base_cfg = base_cfgs.GPT_OSS_20B_GB300_BF16_BASE_CONFIG
+        precision_config = get_precision_config(precision)
+    else:
+        base_cfg = base_cfgs.GPT_OSS_20B_GB300_FP8_MX_BASE_CONFIG
+        precision_config = get_precision_config(precision)
+
+    cfg = gpt_oss_20b_pretrain_config(
+        mock=True,
+        precision_config=precision_config,
+    )
+    set_gpt_oss_common_configs(cfg)
+    set_workload_base_configs(cfg, base_cfg)
+
+    return cfg
 
 def gpt_oss_120b_gb300_config(precision: str = "bf16") -> ConfigContainer:
     """GB300, baseline config."""

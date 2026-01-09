@@ -27,8 +27,23 @@ BASE_GPT_OSS_120B_CONFIG = WorkloadBaseConfig(
     micro_batch_size=1,
 )
 
+BASE_GPT_OSS_20B_CONFIG = WorkloadBaseConfig(
+    num_gpus=16,
+    expert_model_parallel_size=8,
+    expert_tensor_parallel_size=1,
+    global_batch_size=512,
+    micro_batch_size=1,
+)
 
 # GPT-OSS 120B presets ---------------------------------------------------------
+
+GPT_OSS_20B_GB300_BF16_BASE_CONFIG = replace(
+    BASE_GPT_OSS_20B_CONFIG,
+    expert_model_parallel_size=16,
+    micro_batch_size=4,
+    cuda_graph_impl="transformer_engine",
+    cuda_graph_scope=["attn", "moe_router", "moe_preprocess"],
+)
 
 GPT_OSS_120B_GB300_BF16_BASE_CONFIG = replace(
     BASE_GPT_OSS_120B_CONFIG,
@@ -64,6 +79,7 @@ GPT_OSS_120B_H100_BF16_BASE_CONFIG = replace(
 
 __all__ = [
     "GPT_OSS_120B_GB300_BF16_BASE_CONFIG",
+    "GPT_OSS_20B_GB300_BF16_BASE_CONFIG",
     "GPT_OSS_120B_GB200_BF16_BASE_CONFIG",
     "GPT_OSS_120B_B200_BF16_BASE_CONFIG",
     "GPT_OSS_120B_H100_BF16_BASE_CONFIG",
