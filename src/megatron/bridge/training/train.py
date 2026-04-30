@@ -308,7 +308,7 @@ def train(
     )
     if config.model.cuda_graph_impl == "local" and CudaGraphScope.full_iteration in config.model.cuda_graph_scope:
         forward_backward_func = FullCudaGraphWrapper(
-            forward_backward_func, cuda_graph_warmup_steps=config.model.cuda_graph_warmup_steps
+            forward_backward_func, cuda_graph_warmup_steps=config.model.cuda_graph_warmup_steps, cuda_graph_data_2buffer_step=config.model.cuda_graph_data_2buffer_step
         )
 
     if config.optimizer.optimizer_cuda_graph and HAS_OPTIMIZER_CUDA_GRAPH:
