@@ -317,6 +317,7 @@ def train(
             forward_backward_func,
             cuda_graph_warmup_steps=config.model.cuda_graph_warmup_steps,
             use_single_mempool=config.model.cuda_graph_use_single_mempool,
+            cuda_graph_data_2buffer_step=config.model.cuda_graph_data_2buffer_step,
         )
     if config.optimizer.optimizer_cuda_graph and HAS_OPTIMIZER_CUDA_GRAPH:
         optimizer.step = OptimizerCudaGraphWrapper(
