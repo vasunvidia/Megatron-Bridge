@@ -50,12 +50,21 @@ def set_qwen3_common_configs(cfg: ConfigContainer) -> None:
 
 def set_full_iter_cg_configs(cfg: ConfigContainer) -> None:
     """Apply MoE defaults required by full-iteration CUDA graph capture."""
-    cfg.model.offload_modules = []
-    cfg.model.moe_pad_experts_for_cuda_graph_inference = True
-    cfg.model.moe_paged_stash = True
-    cfg.model.moe_expert_rank_capacity_factor = 1.5
-    cfg.model.moe_paged_stash_buffer_size_factor_cuda = 1.2
-    cfg.model.moe_paged_stash_buffer_size_factor_cpu = 1.0
+    import os
+    if os.getenv('CG_TYPE', '') == 'full':
+        print (f'!!! Set set_full_iter_cg_configs')
+        cfg.model.offload_modules = []
+        cfg.model.moe_pad_experts_for_cuda_graph_inference = True
+        cfg.model.moe_paged_stash = True
+        cfg.model.moe_expert_rank_capacity_factor = 1.5
+        cfg.model.moe_paged_stash_buffer_size_factor_cuda = 1.2
+        cfg.model.moe_paged_stash_buffer_size_factor_cpu = 1.0
+    elif 'moe_router' in os.getenv('CG_TYPE', ''):
+        cfg.model.cuda_graph_impl = 'transformer_engine'
+        cfg.model.cuda_graph_scope = os.getenv('CG_TYPE', '').split(',')
+        print (f'!!! Enable partial CG for {cfg.model.cuda_graph_scope}')
+    else:
+        print (f'Dont set CG Type')
 
 
 def qwen3_235b_a22b_pretrain_config_gb300(
@@ -80,6 +89,7 @@ def qwen3_235b_a22b_pretrain_config_gb300(
 
     set_qwen3_common_configs(cfg)
     set_workload_base_configs(cfg, base_cfg)
+    # vasu
     if precision == "fp8_mx" and is_full_iteration_cuda_graph(cfg.model):
         set_full_iter_cg_configs(cfg)
 

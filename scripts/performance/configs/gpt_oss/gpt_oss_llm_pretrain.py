@@ -47,15 +47,33 @@ def set_full_iter_cg_configs(cfg: ConfigContainer) -> None:
     MCore PR #4247 paged stashing to recover memory. Callers should gate on
     `is_full_iteration_cuda_graph(cfg.model)`.
     """
-    cfg.model.moe_pad_experts_for_cuda_graph_inference = True
-    cfg.model.moe_paged_stash = True
-    if cfg.model.moe_expert_rank_capacity_factor is None:
-        cfg.model.moe_expert_rank_capacity_factor = 1.5
-    cfg.model.moe_paged_stash_buffer_size_factor_cuda = 1.2
-    cfg.model.moe_paged_stash_buffer_size_factor_cpu = 1.0
-    cfg.model.cuda_graph_warmup_steps = 2
-    if cfg.model.offload_modules is None:
-        cfg.model.offload_modules = []
+    #cfg.model.moe_pad_experts_for_cuda_graph_inference = True
+    #cfg.model.moe_paged_stash = True
+    #if cfg.model.moe_expert_rank_capacity_factor is None:
+    #    cfg.model.moe_expert_rank_capacity_factor = 1.5
+    #cfg.model.moe_paged_stash_buffer_size_factor_cuda = 1.2
+    #cfg.model.moe_paged_stash_buffer_size_factor_cpu = 1.0
+    #cfg.model.cuda_graph_warmup_steps = 2
+    #if cfg.model.offload_modules is None:
+    #    cfg.model.offload_modules = []
+    import os
+    if os.getenv('CG_TYPE', '') == 'full':
+        print (f'!!! Set set_full_iter_cg_configs')
+        cfg.model.moe_pad_experts_for_cuda_graph_inference = True
+        cfg.model.moe_paged_stash = False
+        if cfg.model.moe_expert_rank_capacity_factor is None:
+            cfg.model.moe_expert_rank_capacity_factor = 1.05
+        #cfg.model.moe_paged_stash_buffer_size_factor_cuda = 1.2
+        #cfg.model.moe_paged_stash_buffer_size_factor_cpu = 1.0
+        cfg.model.cuda_graph_warmup_steps = 2
+        if cfg.model.offload_modules is None:
+            cfg.model.offload_modules = []
+    elif 'moe_router' in os.getenv('CG_TYPE', ''):
+        cfg.model.cuda_graph_impl = 'transformer_engine'
+        cfg.model.cuda_graph_scope = os.getenv('CG_TYPE', '').split(',')
+        print (f'!!! Enable partial CG for {cfg.model.cuda_graph_scope}')
+    else:
+        print (f'Dont set CG Type')
 
 
 def set_gpt_oss_20b_common_configs(cfg: ConfigContainer) -> None:

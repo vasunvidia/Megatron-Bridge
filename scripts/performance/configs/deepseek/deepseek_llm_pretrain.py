@@ -57,11 +57,20 @@ def set_full_iter_cg_configs(cfg: ConfigContainer) -> None:
     MCore PR #4247 paged stashing to recover memory. Callers should gate on
     `is_full_iteration_cuda_graph(cfg.model)`.
     """
-    cfg.model.moe_pad_experts_for_cuda_graph_inference = True
-    cfg.model.moe_paged_stash = True
-    cfg.model.moe_expert_rank_capacity_factor = 1.5
-    cfg.model.moe_paged_stash_buffer_size_factor_cuda = 1.2
-    cfg.model.moe_paged_stash_buffer_size_factor_cpu = 1.0
+    import os
+    if os.getenv('CG_TYPE', '') == 'full':
+        print (f'!!! Set set_full_iter_cg_configs')
+        cfg.model.moe_pad_experts_for_cuda_graph_inference = True
+        cfg.model.moe_paged_stash = True
+        cfg.model.moe_expert_rank_capacity_factor = 1.5
+        cfg.model.moe_paged_stash_buffer_size_factor_cuda = 1.2
+        cfg.model.moe_paged_stash_buffer_size_factor_cpu = 1.0
+    elif 'moe_router' in os.getenv('CG_TYPE', ''):
+        cfg.model.cuda_graph_impl = 'transformer_engine'
+        cfg.model.cuda_graph_scope = os.getenv('CG_TYPE', '').split(',')
+        print (f'!!! Enable partial CG for {cfg.model.cuda_graph_scope}')
+    else:
+        print (f'Dont set CG Type')
 
 
 def deepseek_v3_pretrain_config_gb300(

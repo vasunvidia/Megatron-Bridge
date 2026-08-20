@@ -531,6 +531,8 @@ def _print_memory_report(iteration: int, memory_keys: Optional[dict[str, str]], 
         memory_string += f" | {metric}: {value}"
     if torch.distributed.get_rank(group=dp_group) == 0:
         logger.info("[Rank %s] %s", torch.distributed.get_rank(), memory_string)
+        torch.cuda.memory.reset_peak_memory_stats()
+        logger.info("[Rank %s] Reset peak memory stats", torch.distributed.get_rank())
 
 
 def reduce_max_memory_across_pp_group(
