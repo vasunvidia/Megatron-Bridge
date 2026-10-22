@@ -351,6 +351,27 @@ class TestCudaGraphCleanup:
         mock_delete_runners.assert_called_once_with(model)
         assert calls == ["runners", "global"]
 
+    @patch("megatron.bridge.training.train.delete_local_cuda_graphs")
+    @patch("megatron.bridge.training.train.gc.collect")
+    def test_delete_cuda_graphs_releases_optimizer_gradient_copy_graphs(self, mock_collect, mock_delete_local):
+        """The distributed optimizer's gradient-conversion graph and its reference to the
+        training graph must go too: they keep the captured NCCL work alive, and the process-group
+        destroy after training then hangs."""
+        from megatron.core.full_cuda_graph import FullCudaGraphWrapper, FullIterationGradCopy
+
+        training_graph = Mock()
+        FullCudaGraphWrapper.cuda_graph = {"training": training_graph, "validation": None}
+        copier = FullIterationGradCopy()
+        copier.forward_backward_graph = training_graph
+        copier.graph = Mock()
+        copier.outputs = [(Mock(), Mock())]
+
+        _delete_cuda_graphs(None)
+
+        assert copier.graph is None
+        assert copier.forward_backward_graph is None
+        assert copier.outputs == []
+
 
 @pytest.mark.parametrize("depth", [0, 1, 2])
 def test_optimizer_cleanup_releases_retained_graph_for_repeated_runs(depth):

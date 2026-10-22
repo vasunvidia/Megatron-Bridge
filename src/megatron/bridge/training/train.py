@@ -135,6 +135,14 @@ try:
 except ImportError:
     HAS_OPTIMIZER_CUDA_GRAPH = False
 
+# The distributed optimizer's full-iteration gradient-conversion graphs
+try:
+    from megatron.core.full_cuda_graph import FullIterationGradCopy
+
+    HAS_FULL_ITERATION_GRAD_COPY_RELEASE = hasattr(FullIterationGradCopy, "release_all")
+except ImportError:
+    HAS_FULL_ITERATION_GRAD_COPY_RELEASE = False
+
 
 def train(
     forward_step_func: ForwardStepCallable,
@@ -1785,6 +1793,12 @@ def _release_cuda_graph_references(optimizer: MegatronOptimizer | None) -> None:
         FullCudaGraphWrapper.cuda_graph[stage] = None
         FullCudaGraphWrapper.result[stage] = None
         FullCudaGraphWrapper.curr_iteration[stage] = 0
+
+    # The optimizers' gradient-conversion graphs (MCore FullIterationGradCopy) reference the
+    # training graph, which keeps its captured NCCL collectives alive: the process-group
+    # destroy would then wait for them forever.
+    if HAS_FULL_ITERATION_GRAD_COPY_RELEASE:
+        FullIterationGradCopy.release_all()
 
     # Explicitly delete optimizer CUDA graph
     if HAS_OPTIMIZER_CUDA_GRAPH:
